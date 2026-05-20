@@ -1,30 +1,22 @@
 // screens/dashboard_screen.dart
 import 'package:flutter/material.dart';
-import 'customers_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final String url;
-  final Map<String, dynamic> user;
+  final dynamic user;
 
-  const DashboardScreen({
-    super.key,
-    required this.url,
-    required this.user,
-  });
+  const DashboardScreen({super.key, required this.url, required this.user});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Odoo Dashboard"),
-      ),
+      appBar: AppBar(title: const Text("Odoo Dashboard")),
 
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // 👤 USER CARD
             Card(
               elevation: 2,
@@ -40,10 +32,7 @@ class DashboardScreen extends StatelessWidget {
             // 📦 MODULE TITLE
             const Text(
               "Sales Module",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 10),
@@ -55,7 +44,6 @@ class DashboardScreen extends StatelessWidget {
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
                 children: [
-
                   _menuCard(
                     icon: Icons.people,
                     title: "Customers",
@@ -63,8 +51,7 @@ class DashboardScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              CustomersScreen(url: url),
+                          builder: (_) => CustomersScreen(url: url),
                         ),
                       );
                     },
