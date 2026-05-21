@@ -3,7 +3,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class OdooAuthService {
+  static String? sessionCookie;
 
+  // =========================
+  // FETCH DATABASES
+  // =========================
   static Future<List<String>> fetchDatabases(String url) async {
     final response = await http.post(
       Uri.parse("$url/web/database/list"),
@@ -19,7 +23,9 @@ class OdooAuthService {
     return List<String>.from(data['result'] ?? []);
   }
 
-  // ✅ FIXED LOGIN
+  // =========================
+  // LOGIN (SAVE SESSION)
+  // =========================
   static Future<Map<String, dynamic>?> login(
     String url,
     String db,
@@ -44,12 +50,11 @@ class OdooAuthService {
 
     final data = jsonDecode(response.body);
 
+    // 🔥 SAVE SESSION COOKIE (IMPORTANT FIX)
+    sessionCookie = response.headers['set-cookie'];
+
     if (data['result'] != null && data['result']['uid'] != null) {
-      return {
-        "uid": data['result']['uid'],
-        "name": data['result']['name'] ?? login,
-        "session_id": response.headers['set-cookie'],
-      };
+      return data['result'];
     }
 
     return null;

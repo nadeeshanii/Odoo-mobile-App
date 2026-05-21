@@ -1,5 +1,6 @@
 // screens/dashboard_screen.dart
 import 'package:flutter/material.dart';
+import 'customers_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final String url;

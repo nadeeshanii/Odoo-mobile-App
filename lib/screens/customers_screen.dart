@@ -13,52 +13,89 @@ class CustomersScreen extends StatefulWidget {
 
 class _CustomersScreenState extends State<CustomersScreen> {
   List customers = [];
-  bool loading = false;
+  bool isLoading = false;
+  String? errorText;
 
   @override
   void initState() {
     super.initState();
-    load();
+    loadCustomers();
   }
 
-  Future<void> load() async {
-    setState(() => loading = true);
-
-    final data = await OdooApiService.getCustomers(widget.url);
-
+  // =========================
+  // LOAD CUSTOMERS
+  // =========================
+  Future<void> loadCustomers() async {
     setState(() {
-      customers = data;
-      loading = false;
+      isLoading = true;
+      errorText = null;
     });
+
+    try {
+      final data = await OdooApiService.getCustomers(widget.url);
+      setState(() => customers = data);
+    } catch (e) {
+      setState(() => errorText = e.toString());
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Customers"),
-      ),
+      backgroundColor: const Color(0xFFF5F5F5),
 
-      body: loading
+      appBar: AppBar(title: const Text("Customers")),
+
+      body: isLoading
           ? const Center(child: CircularProgressIndicator())
+          : errorText != null
+          ? Center(child: Text("Error: $errorText"))
+          : customers.isEmpty
+          ? const Center(child: Text("No Customers Found"))
           : ListView.builder(
               itemCount: customers.length,
-              itemBuilder: (context, i) {
-                final c = customers[i];
+              itemBuilder: (context, index) {
+                final c = customers[index];
+
+                String name = c['name'] ?? 'No Name';
+                String email = c['email'] ?? '-';
+                String phone = c['phone'] ?? '-';
 
                 return Card(
                   margin: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
+                    horizontal: 12,
+                    vertical: 6,
                   ),
+                  elevation: 2,
+
                   child: ListTile(
-                    leading: const Icon(
-                      Icons.person,
-                      color: Color(0xFF714B67),
+                    contentPadding: const EdgeInsets.all(12),
+
+                    // 👤 Avatar
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFF714B67),
+                      child: Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : "?",
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
-                    title: Text(c['name'] ?? ''),
-                    subtitle: Text(
-                      "${c['email'] ?? ''}\n${c['phone'] ?? ''}",
+
+                    // 📌 Name
+                    title: Text(
+                      name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+
+                    // 📧 Email + 📞 Phone
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 5),
+                        Text("📧 $email"),
+                        Text("📞 $phone"),
+                      ],
                     ),
                   ),
                 );
