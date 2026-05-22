@@ -12,16 +12,23 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController urlController = TextEditingController();
+
   final TextEditingController usernameController = TextEditingController();
+
   final TextEditingController passwordController = TextEditingController();
 
   List<String> databases = [];
   String? selectedDatabase;
+  String? dbError;
 
   bool isLoading = false;
+  bool isLogging = false;
 
+  final Color odooPurple = const Color(0xFF714B67);
+
+  // =========================
   // FETCH DATABASES
-
+  // =========================
   Future<void> fetchDatabases() async {
     setState(() => isLoading = true);
 
@@ -33,29 +40,34 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         databases = dbs;
         selectedDatabase = dbs.isNotEmpty ? dbs.first : null;
+        dbError = null;
       });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Failed to load databases: $e")));
-      }
+      final message = e.toString();
+      setState(() => dbError = message);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed: $message")));
     } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
+      setState(() => isLoading = false);
     }
   }
 
+  // =========================
   // LOGIN
-
+  // =========================
   Future<void> login() async {
+    setState(() => isLogging = true);
+
     final result = await OdooAuthService.login(
       urlController.text,
       selectedDatabase ?? "",
       usernameController.text,
       passwordController.text,
     );
+
+    setState(() => isLogging = false);
 
     if (result != null) {
       Navigator.pushReplacement(
@@ -72,136 +84,219 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // =========================
+  // INPUT FIELD
+  // =========================
+  Widget buildField(
+    String label,
+    TextEditingController controller,
+    IconData icon, {
+    bool obscure = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: odooPurple),
+
+        labelText: label,
+
+        filled: true,
+        fillColor: Colors.white,
+
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(14),
+        ),
+
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: odooPurple, width: 1.5),
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF5F5F7),
 
       body: Center(
         child: SingleChildScrollView(
-          child: Card(
-            elevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+          padding: const EdgeInsets.all(20),
+
+          child: Container(
+            padding: const EdgeInsets.all(22),
+
+            decoration: BoxDecoration(
+              color: Colors.white,
+
+              borderRadius: BorderRadius.circular(22),
+
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            margin: const EdgeInsets.all(20),
 
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Odoo Login",
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+
+              children: [
+                // =========================
+                // LOGO
+                // =========================
+                CircleAvatar(
+                  radius: 35,
+                  backgroundColor: odooPurple,
+
+                  child: const Text(
+                    "O",
                     style: TextStyle(
-                      fontSize: 22,
+                      color: Colors.white,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF714B67),
                     ),
                   ),
+                ),
 
-                  const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
-                  //  URL
-                  TextField(
-                    controller: urlController,
-                    decoration: InputDecoration(
-                      labelText: "Server URL",
-                      prefixIcon: const Icon(Icons.link),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                const Text(
+                  "Welcome Back",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 4),
+
+                Text(
+                  "Sign in to Odoo Sales ERP",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
+
+                const SizedBox(height: 20),
+
+                // URL
+                buildField("Server URL", urlController, Icons.link),
+
+                const SizedBox(height: 12),
+
+                // FETCH DB
+                SizedBox(
+                  height: 45,
+                  child: ElevatedButton(
+                    onPressed: fetchDatabases,
+
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: odooPurple,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
+
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text("Fetch Databases"),
                   ),
+                ),
 
-                  const SizedBox(height: 15),
+                const SizedBox(height: 8),
 
-                  //  FETCH DB
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: fetchDatabases,
-                      child: const Text("Fetch Databases"),
+                if (dbError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      dbError!,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                const SizedBox(height: 4),
 
-                  //  DATABASE
-                  DropdownButtonFormField<String>(
-                    value: selectedDatabase,
-                    items: databases
-                        .map(
-                          (db) => DropdownMenuItem(value: db, child: Text(db)),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedDatabase = value;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      labelText: "Select Database",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                // DATABASE
+                DropdownButtonFormField<String>(
+                  value: selectedDatabase,
+
+                  items: databases
+                      .map((db) => DropdownMenuItem(value: db, child: Text(db)))
+                      .toList(),
+
+                  onChanged: (value) {
+                    setState(() {
+                      selectedDatabase = value;
+                    });
+                  },
+
+                  decoration: InputDecoration(
+                    labelText: "Database",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // USERNAME
+                buildField("Username", usernameController, Icons.person),
+
+                const SizedBox(height: 12),
+
+                // PASSWORD
+                buildField(
+                  "Password",
+                  passwordController,
+                  Icons.lock,
+                  obscure: true,
+                ),
+
+                const SizedBox(height: 18),
+
+                // LOGIN BUTTON
+                SizedBox(
+                  height: 48,
+
+                  child: ElevatedButton(
+                    onPressed: login,
+
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: odooPurple,
+
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
+
+                    child: isLogging
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text("Login", style: TextStyle(fontSize: 16)),
                   ),
-
-                  const SizedBox(height: 15),
-
-                  //  USERNAME
-                  TextField(
-                    controller: usernameController,
-                    decoration: InputDecoration(
-                      labelText: "Username",
-                      prefixIcon: const Icon(Icons.person),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  //  PASSWORD
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      prefixIcon: const Icon(Icons.lock),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  //  LOGIN BUTTON
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: login,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: const Color(0xFF714B67),
-                      ),
-                      child: const Text("Login"),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  //  LOADING
-                  if (isLoading)
-                    const Padding(
-                      padding: EdgeInsets.all(10),
-                      child: CircularProgressIndicator(),
-                    ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
