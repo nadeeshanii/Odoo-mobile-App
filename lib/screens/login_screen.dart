@@ -20,31 +20,35 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool isLoading = false;
 
-  // =========================
   // FETCH DATABASES
-  // =========================
+
   Future<void> fetchDatabases() async {
     setState(() => isLoading = true);
 
     try {
-      final dbs = await OdooAuthService.fetchDatabases(
-        urlController.text,
-      );
+      final dbs = await OdooAuthService.fetchDatabases(urlController.text);
+
+      if (!mounted) return;
 
       setState(() {
         databases = dbs;
         selectedDatabase = dbs.isNotEmpty ? dbs.first : null;
-        isLoading = false;
       });
     } catch (e) {
-      setState(() => isLoading = false);
-      print(e);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed to load databases: $e")));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
-  // =========================
   // LOGIN
-  // =========================
+
   Future<void> login() async {
     final result = await OdooAuthService.login(
       urlController.text,
@@ -57,16 +61,14 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => DashboardScreen(
-            url: urlController.text,
-            user: result,
-          ),
+          builder: (_) =>
+              DashboardScreen(url: urlController.text, user: result),
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login Failed")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Login Failed")));
     }
   }
 
@@ -89,8 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-
-                  // 🟣 TITLE
                   const Text(
                     "Odoo Login",
                     style: TextStyle(
@@ -102,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 🌐 URL
+                  //  URL
                   TextField(
                     controller: urlController,
                     decoration: InputDecoration(
@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 15),
 
-                  // 🔄 FETCH DB
+                  //  FETCH DB
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -127,15 +127,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 10),
 
-                  // 📂 DATABASE
+                  //  DATABASE
                   DropdownButtonFormField<String>(
                     value: selectedDatabase,
                     items: databases
                         .map(
-                          (db) => DropdownMenuItem(
-                            value: db,
-                            child: Text(db),
-                          ),
+                          (db) => DropdownMenuItem(value: db, child: Text(db)),
                         )
                         .toList(),
                     onChanged: (value) {
@@ -153,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 15),
 
-                  // 👤 USERNAME
+                  //  USERNAME
                   TextField(
                     controller: usernameController,
                     decoration: InputDecoration(
@@ -167,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 15),
 
-                  // 🔒 PASSWORD
+                  //  PASSWORD
                   TextField(
                     controller: passwordController,
                     obscureText: true,
@@ -182,15 +179,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 🔑 LOGIN BUTTON
+                  //  LOGIN BUTTON
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: login,
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         backgroundColor: const Color(0xFF714B67),
                       ),
                       child: const Text("Login"),
@@ -199,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 10),
 
-                  // ⏳ LOADING
+                  //  LOADING
                   if (isLoading)
                     const Padding(
                       padding: EdgeInsets.all(10),

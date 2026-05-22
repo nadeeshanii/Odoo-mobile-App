@@ -1,6 +1,8 @@
 // screens/customers_screen.dart
 import 'package:flutter/material.dart';
 import '../services/odoo_api_service.dart';
+import 'create_customer_screen.dart';
+import 'customer_details_screen.dart';
 
 class CustomersScreen extends StatefulWidget {
   final String url;
@@ -22,9 +24,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
     loadCustomers();
   }
 
-  // =========================
   // LOAD CUSTOMERS
-  // =========================
+
   Future<void> loadCustomers() async {
     setState(() {
       isLoading = true;
@@ -46,7 +47,27 @@ class _CustomersScreenState extends State<CustomersScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
 
-      appBar: AppBar(title: const Text("Customers")),
+      appBar: AppBar(
+        title: const Text("Customers"),
+
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CreateCustomerScreen(url: widget.url),
+                ),
+              ).then((value) {
+                if (value == true) {
+                  loadCustomers();
+                }
+              });
+            },
+          ),
+        ],
+      ),
 
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -71,9 +92,18 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   elevation: 2,
 
                   child: ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CustomerDetailsScreen(customer: c),
+                        ),
+                      );
+                    },
+
                     contentPadding: const EdgeInsets.all(12),
 
-                    // 👤 Avatar
+                    //  Avatar
                     leading: CircleAvatar(
                       backgroundColor: const Color(0xFF714B67),
                       child: Text(
@@ -82,13 +112,13 @@ class _CustomersScreenState extends State<CustomersScreen> {
                       ),
                     ),
 
-                    // 📌 Name
+                    //  Name
                     title: Text(
                       name,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
 
-                    // 📧 Email + 📞 Phone
+                    //  Email   Phone
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
